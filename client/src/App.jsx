@@ -217,6 +217,8 @@ export default function App() {
 
       <footer className="footer">
         Made by <a href="https://gimeno.dev" target="_blank" rel="noopener noreferrer">Gimeno</a>
+        {' · '}
+        <a href="https://github.com/GodGMN/mdshare" target="_blank" rel="noopener noreferrer">GitHub</a>
       </footer>
     </div>
   );
