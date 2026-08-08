@@ -1,55 +1,56 @@
 # mdshare
 
-A minimal Markdown paste service. Paste a `.md` file, hit **Ctrl+S** (or **Cmd+S**),
-and the URL updates to a UUID you can copy and share. The receiver sees the
-Markdown rendered client-side.
+![mdshare](screenshot/mdshare.png)
 
-## Stack
+A minimal Markdown paste service. Paste, save, share — rendered client-side with a CRT/terminal aesthetic.
 
-- **Backend:** Node.js + Express + PostgreSQL (`pg`)
-- **Frontend:** React + Vite, `marked` + `DOMPurify` for rendering
-- **Deploy:** Dockerfile (multi-stage) + docker-compose.yml
+**Live:** [md.gimeno.dev](https://md.gimeno.dev)
 
-## Local development
+---
 
-Terminal 1 — backend:
-
-```sh
-cd server && npm install && npm start
-```
-
-Terminal 2 — frontend (Vite dev server proxies `/api` → `localhost:20080`):
-
-```sh
-cd client && npm install && npm run dev
-```
-
-Open http://localhost:5173
-
-## Docker (deploy or test locally)
+## Run locally (Docker)
 
 ```sh
 docker compose up --build
 ```
 
-Open http://localhost:20080. The app connects to the PostgreSQL instance at
-`192.168.100.212:5433` and uses the `mdshare` database (set via `server/.env`,
-which is not committed).
+Open `http://localhost:20080`.
 
-## API
+Create a `server/.env` with your PostgreSQL connection (this file is gitignored):
 
-| Method | Route            | Description                       |
-| ------ | ---------------- | --------------------------------- |
-| POST   | `/api/paste`     | `{ content }` → `{ id, url }`     |
-| GET    | `/api/paste/:id` | Fetch a paste `{ id, content, created_at }` |
+```env
+PORT=20080
+HOST=0.0.0.0
+DATABASE_URL=postgresql://user:pass@host:5432/mdshare
+MAX_CONTENT=1000000
+```
+
+The `pastes` table is created automatically on startup.
+
+## Production deployment
+
+The `Dockerfile` is a multi-stage production build — it compiles the React client and serves it from Express with no dev dependencies:
+
+```sh
+docker build -t mdshare .
+docker run -p 20080:20080 -e DATABASE_URL=postgresql://... mdshare
+```
 
 ## Environment variables
 
-| Variable       | Default                                             | Description                |
-| -------------- | --------------------------------------------------- | -------------------------- |
-| `PORT`         | `20080`                                             | HTTP port                  |
-| `HOST`         | `0.0.0.0`                                           | Listen address             |
-| `DATABASE_URL` | `postgresql://postgres:toor@192.168.100.212:5433/mdshare` | PostgreSQL connection     |
-| `MAX_CONTENT`  | `1000000` (≈1 MB)                                   | Max paste size in bytes    |
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string |
+| `PORT` | No | `20080` | HTTP port |
+| `HOST` | No | `0.0.0.0` | Bind address |
+| `MAX_CONTENT` | No | `1000000` | Max paste size (bytes) |
 
-Config is loaded from `server/.env` (git-ignored).
+## Tech
+
+- **Backend:** Node.js, Express, PostgreSQL (`pg`)
+- **Frontend:** React, Vite, markdown-it, DOMPurify
+- **Fonts:** IBM Plex Mono, VT323 (self-hosted)
+
+## License
+
+MIT © [Gimeno](https://gimeno.dev)

@@ -91,6 +91,7 @@ a:hover { color: var(--accent-bright); }
 .btn:active { background: rgba(51, 255, 51, .12); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn.copy.copied { border-color: var(--accent); color: var(--accent-bright); background: rgba(51, 255, 51, .12); }
+.btn .short { display: none; }
 
 .hint { color: var(--text-dim); font-size: 13px; letter-spacing: .05em; }
 
@@ -305,12 +306,18 @@ a:hover { color: var(--accent-bright); }
 }
 
 @media screen and (max-width: 768px) {
-  .topbar { height: 46px; padding: 0 16px; font-size: 15px; }
-  .logo { font-size: 20px; }
+  .topbar { height: 46px; padding: 0 12px; font-size: 15px; gap: 8px; }
+  .logo { font-size: 18px; }
+  .actions { gap: 6px; }
+  .btn { padding: 4px 8px; font-size: 12px; }
+  .btn .full { display: none; }
+  .btn .short { display: inline; }
+  .hint { display: none; }
   .editor, .viewer { padding-left: 16px; padding-right: 16px; }
   .editor-actions { flex-direction: column; align-items: stretch; gap: 10px; }
   .btn.save { width: 100%; }
   .viewer { padding-top: 32px; }
   .markdown h1 { font-size: 24px; }
   .markdown h2 { font-size: 19px; }
+  .footer { padding: 16px; }
 }
