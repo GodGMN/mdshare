@@ -169,20 +169,20 @@ export default function App() {
                 onClick={copyMarkdown}
               >
                 <span className="full">{copiedAction === 'md' ? '[ COPIED ]' : '[ COPY MD ]'}</span>
-                <span className="short">{copiedAction === 'md' ? '✓' : 'MD'}</span>
+                <span className="short">{copiedAction === 'md' ? '✓' : 'Copy MD'}</span>
               </button>
               <button
                 className={`btn copy${copiedAction === 'url' ? ' copied' : ''}`}
                 onClick={copy}
               >
                 <span className="full">{copiedAction === 'url' ? '[ COPIED ]' : '[ COPY URL ]'}</span>
-                <span className="short">{copiedAction === 'url' ? '✓' : 'URL'}</span>
+                <span className="short">{copiedAction === 'url' ? '✓' : 'Copy URL'}</span>
               </button>
             </>
           )}
           <button className="btn" onClick={newNote} disabled={!id}>
             <span className="full">[ NEW NOTE ]</span>
-            <span className="short">NEW</span>
+            <span className="short">New</span>
           </button>
         </div>
       </header>

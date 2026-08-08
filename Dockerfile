@@ -2,7 +2,7 @@
 FROM node:20-slim AS build
 WORKDIR /app/client
 COPY client/package.json client/package-lock.json* ./
-RUN npm install
+RUN npm ci
 COPY client/ .
 RUN npm run build
 
@@ -14,7 +14,7 @@ ENV PORT=3000
 ENV NODE_ENV=production
 
 COPY server/package.json server/package-lock.json* ./server/
-RUN cd server && npm install --omit=dev
+RUN cd server && npm ci --omit=dev
 
 COPY server/ ./server/
 COPY --from=build /app/client/dist ./client/dist
