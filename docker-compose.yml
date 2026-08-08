@@ -1,0 +1,9 @@
+services:
+  mdshare:
+    build: .
+    container_name: mdshare
+    env_file:
+      - server/.env
+    ports:
+      - "20080:20080"
+    restart: unless-stopped
