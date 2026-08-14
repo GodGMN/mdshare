@@ -76,7 +76,7 @@ jobs:
 
       - name: Collect image digest and checksums
         run: |
-          IMAGE="ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}:${{ steps.meta.outputs.version }}"
           DIGEST=$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}')
           cosign sign --yes "${IMAGE}@${DIGEST}"
           echo "$IMAGE $DIGEST" | tee checksums.txt
