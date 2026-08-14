@@ -131,7 +131,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <span className="logo">mdshare<span>_</span></span>
+        <span className="logo">
+          mdshare<span>_</span>
+        </span>
         <div className="actions">
           {id && (
             <>
@@ -146,7 +148,9 @@ export default function App() {
                 className={`btn copy${copiedAction === 'url' ? ' copied' : ''}`}
                 onClick={copy}
               >
-                <span className="full">{copiedAction === 'url' ? '[ COPIED ]' : '[ COPY URL ]'}</span>
+                <span className="full">
+                  {copiedAction === 'url' ? '[ COPIED ]' : '[ COPY URL ]'}
+                </span>
                 <span className="short">{copiedAction === 'url' ? '✓' : 'Copy URL'}</span>
               </button>
             </>
@@ -175,11 +179,7 @@ export default function App() {
           />
           <div className="editor-actions">
             <span className="hint">CTRL+S to save</span>
-            <button
-              className="btn save"
-              onClick={save}
-              disabled={loading || !content}
-            >
+            <button className="btn save" onClick={save} disabled={loading || !content}>
               {loading ? '[ SAVING… ]' : '[ SAVE ]'}
             </button>
           </div>
@@ -187,9 +187,14 @@ export default function App() {
       )}
 
       <footer className="footer">
-        Made by <a href="https://gimeno.dev" target="_blank" rel="noopener noreferrer">Gimeno</a>
+        Made by{' '}
+        <a href="https://gimeno.dev" target="_blank" rel="noopener noreferrer">
+          Gimeno
+        </a>
         {' · '}
-        <a href="https://github.com/GodGMN/mdshare" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/GodGMN/mdshare" target="_blank" rel="noopener noreferrer">
+          GitHub
+        </a>
       </footer>
     </div>
   );

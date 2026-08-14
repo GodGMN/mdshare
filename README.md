@@ -53,6 +53,8 @@ docker run -p 20080:20080 -e DATABASE_URL=postgresql://... ghcr.io/godgmn/mdshar
 | `PASTE_TTL_DAYS` | No | `30` | Pastes older than this are deleted hourly; `0` disables expiry |
 | `TRUST_PROXY` | No | — | Set when running behind a reverse proxy so per-IP rate limiting works. `true`, or the number of proxy hops (e.g. `1`), or a proxy subnet |
 
+Anonymous pastes are rate limited per IP to **10 posts per minute** (in-memory; resets on restart). Empty or whitespace-only pastes are rejected with a 400. Released images are scanned with Trivy, signed with cosign, and published with an SPDX SBOM.
+
 ## Reverse proxy note
 
 If mdshare runs behind nginx/Traefik/Caddy, set `TRUST_PROXY=1` (or your proxy count). Without it, the rate limiter sees the proxy's IP for every client and throttles all users together.
@@ -80,3 +82,5 @@ cd server && TEST_DATABASE_URL=postgresql://user:pass@host:5432/mdshare_test npm
 ## License
 
 MIT © [Gimeno](https://gimeno.dev)
+
+Contributing: see [CONTRIBUTING.md](CONTRIBUTING.md). Security: see [SECURITY.md](SECURITY.md).

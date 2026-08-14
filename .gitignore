@@ -1,5 +1,8 @@
 node_modules/
 client/dist/
+coverage/
+server/coverage/
+client/coverage/
 server/data/
 *.log
 server/.env

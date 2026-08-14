@@ -1,6 +1,6 @@
 {
   "name": "mdshare",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,6 +8,8 @@
   },
   "scripts": {
     "lint": "eslint server client",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "cd server && npm test && cd ../client && npm test",
     "build": "cd client && npm run build"
   },
@@ -15,6 +17,7 @@
     "@eslint/js": "^9.20.0",
     "eslint": "^9.20.0",
     "eslint-plugin-react": "^7.37.4",
-    "globals": "^15.14.0"
+    "globals": "^15.14.0",
+    "prettier": "3.9.6"
   }
 }

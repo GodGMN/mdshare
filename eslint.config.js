@@ -4,7 +4,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['**/node_modules/**', '**/dist/**', 'client/fonts/**'],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', 'client/fonts/**'],
   },
   js.configs.recommended,
   {

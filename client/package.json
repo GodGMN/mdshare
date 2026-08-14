@@ -1,6 +1,6 @@
 {
   "name": "mdshare-client",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run --coverage"
   },
   "dependencies": {
     "dompurify": "^3.2.4",
@@ -25,7 +25,9 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^29.1.1",
     "vite": "^6.0.11",
     "vitest": "^4.1.10"

@@ -59,6 +59,26 @@ test('POST /api/paste with non-string content returns 400', async () => {
   assert.deepEqual(res.body, { error: 'missing content' });
 });
 
+test('POST /api/paste with empty string content returns 400', async () => {
+  const { pool, queries } = makePool();
+  const res = await request(createApp({ pool, enableRateLimit: false }))
+    .post('/api/paste')
+    .send({ content: '' });
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body, { error: 'empty content' });
+  assert.equal(queries.length, 0);
+});
+
+test('POST /api/paste with whitespace-only content returns 400', async () => {
+  const { pool, queries } = makePool();
+  const res = await request(createApp({ pool, enableRateLimit: false }))
+    .post('/api/paste')
+    .send({ content: '  \n\t ' });
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body, { error: 'empty content' });
+  assert.equal(queries.length, 0);
+});
+
 test('POST /api/paste with body over limit returns 413', async () => {
   const { pool, queries } = makePool();
   const res = await request(createApp({ pool, maxContent: 20, enableRateLimit: false }))
@@ -110,15 +130,43 @@ test('GET /api/paste/:id returns 500 when query fails', async () => {
   assert.deepEqual(res.body, { error: 'internal error' });
 });
 
-test('rate limiter allows one post per second', async () => {
+test('GET /api/paste/:id coerces bigint created_at to number', async () => {
+  const { pool } = makePool({
+    selectRows: [{ id: 'abc', content: 'x', created_at: '1755158400000' }],
+  });
+  const res = await request(createApp({ pool, enableRateLimit: false })).get('/api/paste/abc');
+  assert.equal(typeof res.body.created_at, 'number');
+  assert.equal(res.body.created_at, 1755158400000);
+});
+
+test('sets security headers', async () => {
+  const { pool } = makePool();
+  const res = await request(createApp({ pool, enableRateLimit: false })).get('/health');
+  assert.match(res.headers['content-security-policy'], /default-src 'self'/);
+  assert.match(res.headers['content-security-policy'], /frame-ancestors 'none'/);
+  assert.equal(res.headers['x-content-type-options'], 'nosniff');
+  assert.equal(res.headers['referrer-policy'], 'no-referrer');
+});
+
+test('rate limiter enforces the configured limit', async () => {
   const { pool, queries } = makePool();
-  const app = createApp({ pool });
+  const app = createApp({ pool, rateLimitOptions: { windowMs: 60_000, limit: 1 } });
   const first = await request(app).post('/api/paste').send({ content: 'one' });
   assert.equal(first.status, 200);
   const second = await request(app).post('/api/paste').send({ content: 'two' });
   assert.equal(second.status, 429);
   assert.deepEqual(second.body, { error: 'rate limited' });
   assert.equal(queries.length, 1);
+});
+
+test('rate limiter default allows several posts within the window', async () => {
+  const { pool, queries } = makePool();
+  const app = createApp({ pool });
+  for (let i = 0; i < 3; i++) {
+    const res = await request(app).post('/api/paste').send({ content: 'x' });
+    assert.equal(res.status, 200);
+  }
+  assert.equal(queries.length, 3);
 });
 
 test('trust proxy is applied when configured', async () => {
@@ -129,10 +177,16 @@ test('trust proxy is applied when configured', async () => {
 
 test('rate limit is per client IP when behind a trusted proxy', async () => {
   const { pool, queries } = makePool();
-  const app = createApp({ pool, trustProxy: 1 });
-  const first = await request(app).post('/api/paste').set('X-Forwarded-For', '1.1.1.1').send({ content: 'one' });
+  const app = createApp({ pool, trustProxy: 1, rateLimitOptions: { windowMs: 60_000, limit: 1 } });
+  const first = await request(app)
+    .post('/api/paste')
+    .set('X-Forwarded-For', '1.1.1.1')
+    .send({ content: 'one' });
   assert.equal(first.status, 200);
-  const second = await request(app).post('/api/paste').set('X-Forwarded-For', '2.2.2.2').send({ content: 'two' });
+  const second = await request(app)
+    .post('/api/paste')
+    .set('X-Forwarded-For', '2.2.2.2')
+    .send({ content: 'two' });
   assert.equal(second.status, 200);
   assert.equal(queries.length, 2);
 });

@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+*/coverage/
+client/dist/
+client/public/
+screenshot/
+package-lock.json
+*/package-lock.json
+*.md
