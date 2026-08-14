@@ -121,6 +121,22 @@ test('rate limiter allows one post per second', async () => {
   assert.equal(queries.length, 1);
 });
 
+test('trust proxy is applied when configured', async () => {
+  const { pool } = makePool();
+  const app = createApp({ pool, trustProxy: 1 });
+  assert.equal(app.get('trust proxy'), 1);
+});
+
+test('rate limit is per client IP when behind a trusted proxy', async () => {
+  const { pool, queries } = makePool();
+  const app = createApp({ pool, trustProxy: 1 });
+  const first = await request(app).post('/api/paste').set('X-Forwarded-For', '1.1.1.1').send({ content: 'one' });
+  assert.equal(first.status, 200);
+  const second = await request(app).post('/api/paste').set('X-Forwarded-For', '2.2.2.2').send({ content: 'two' });
+  assert.equal(second.status, 200);
+  assert.equal(queries.length, 2);
+});
+
 test('serves SPA from dist dir and passes through /api', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'mdshare-dist-'));
   writeFileSync(path.join(dir, 'index.html'), '<!doctype html><title>mdshare</title>');

@@ -3,8 +3,15 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 
-export function createApp({ pool, distDir = null, maxContent = 1_000_000, enableRateLimit = true }) {
+export function createApp({
+  pool,
+  distDir = null,
+  maxContent = 1_000_000,
+  enableRateLimit = true,
+  trustProxy = false,
+}) {
   const app = express();
+  if (trustProxy) app.set('trust proxy', trustProxy);
   app.use(express.json({ limit: maxContent }));
 
   const createPaste = async (req, res) => {

@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "node --test",
