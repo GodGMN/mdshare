@@ -9,6 +9,7 @@ export function createApp({
   maxContent = 1_000_000,
   enableRateLimit = true,
   rateLimitOptions = { windowMs: 60_000, limit: 10 },
+  readRateLimitOptions = { windowMs: 60_000, limit: 60 },
   trustProxy = false,
 }) {
   const app = express();
@@ -52,24 +53,32 @@ export function createApp({
     }
   };
 
-  if (enableRateLimit) {
-    app.post(
-      '/api/paste',
-      rateLimit({
+  const postLimiter = enableRateLimit
+    ? rateLimit({
         ...rateLimitOptions,
         standardHeaders: 'draft-8',
         legacyHeaders: false,
         handler: (_req, res) => res.status(429).json({ error: 'rate limited' }),
-      }),
-      createPaste,
-    );
+      })
+    : null;
+  const readLimiter = enableRateLimit
+    ? rateLimit({
+        ...readRateLimitOptions,
+        standardHeaders: 'draft-8',
+        legacyHeaders: false,
+        handler: (_req, res) => res.status(429).json({ error: 'rate limited' }),
+      })
+    : null;
+
+  if (postLimiter) {
+    app.post('/api/paste', postLimiter, createPaste);
   } else {
     app.post('/api/paste', createPaste);
   }
 
   app.get('/health', (_req, res) => res.json({ ok: true }));
 
-  app.get('/api/paste/:id', async (req, res) => {
+  const readPaste = async (req, res) => {
     try {
       const { rows } = await pool.query(
         'SELECT id, content, created_at FROM pastes WHERE id = $1',
@@ -82,7 +91,13 @@ export function createApp({
       console.error(err);
       res.status(500).json({ error: 'internal error' });
     }
-  });
+  };
+
+  if (readLimiter) {
+    app.get('/api/paste/:id', readLimiter, readPaste);
+  } else {
+    app.get('/api/paste/:id', readPaste);
+  }
 
   if (distDir) {
     app.use(express.static(distDir));

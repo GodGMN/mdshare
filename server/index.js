@@ -6,26 +6,25 @@ import pg from 'pg';
 import { createApp } from './app.js';
 import { startCleanupInterval } from './cleanup.js';
 import { SCHEMA_SQL } from './schema.js';
+import { loadConfig } from './env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error('DATABASE_URL is required (e.g. postgresql://user:pass@host:5432/mdshare)');
+let config;
+try {
+  config = loadConfig();
+} catch (err) {
+  console.error(`mdshare: ${err.message}`);
   process.exit(1);
 }
 
-const PORT = process.env.PORT || 20080;
-const HOST = process.env.HOST || '0.0.0.0';
-const MAX_CONTENT = Number(process.env.MAX_CONTENT) || 1_000_000;
-const PASTE_TTL_DAYS = Number(process.env.PASTE_TTL_DAYS ?? 30);
-
-function parseTrustProxy(value) {
-  if (!value) return false;
-  if (value === 'true') return true;
-  const hops = Number(value);
-  return Number.isInteger(hops) && hops >= 0 ? hops : value;
-}
+const {
+  databaseUrl: DATABASE_URL,
+  port: PORT,
+  host: HOST,
+  maxContent: MAX_CONTENT,
+  pasteTtlDays: PASTE_TTL_DAYS,
+} = config;
 
 const DIST_DIR = path.join(__dirname, '..', 'client', 'dist');
 
@@ -46,7 +45,7 @@ const app = createApp({
   pool,
   distDir: fs.existsSync(DIST_DIR) ? DIST_DIR : null,
   maxContent: MAX_CONTENT,
-  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
+  trustProxy: config.trustProxy,
 });
 
 const server = app.listen(PORT, HOST, () => {

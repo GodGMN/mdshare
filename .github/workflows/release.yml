@@ -18,6 +18,8 @@ jobs:
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
@@ -54,6 +56,28 @@ jobs:
           exit-code: 1
           format: table
 
+      - name: Smoke test local image against a real PostgreSQL
+        run: |
+          docker network create smoke
+          docker run -d --name db --network smoke \
+            -e POSTGRES_USER=mdshare -e POSTGRES_PASSWORD=mdshare -e POSTGRES_DB=mdshare \
+            postgres:16-alpine
+          for i in $(seq 1 30); do
+            docker exec db pg_isready -U mdshare >/dev/null 2>&1 && break
+            sleep 1
+          done
+          docker run -d --name app --network smoke -p 20080:20080 \
+            -e DATABASE_URL=postgresql://mdshare:mdshare@db:5432/mdshare \
+            mdshare:release
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:20080/health && break
+            sleep 1
+          done
+          BODY=$(curl -fsS -X POST http://localhost:20080/api/paste -H 'Content-Type: application/json' -d '{"content":"# smoke test"}')
+          ID=$(echo "$BODY" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
+          curl -fsS "http://localhost:20080/api/paste/$ID" | grep -q 'smoke test'
+          echo "smoke test passed"
+
       - name: Generate SBOM (SPDX)
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -66,6 +90,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           provenance: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

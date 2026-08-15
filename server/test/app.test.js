@@ -191,6 +191,52 @@ test('rate limit is per client IP when behind a trusted proxy', async () => {
   assert.equal(queries.length, 2);
 });
 
+test('read rate limiter enforces the configured limit', async () => {
+  const row = { id: 'abc', content: 'x', created_at: 123 };
+  const { pool, queries } = makePool({ selectRows: [row] });
+  const app = createApp({
+    pool,
+    enableRateLimit: true,
+    rateLimitOptions: { windowMs: 60_000, limit: 100 },
+    readRateLimitOptions: { windowMs: 60_000, limit: 1 },
+  });
+  const first = await request(app).get('/api/paste/abc');
+  assert.equal(first.status, 200);
+  const second = await request(app).get('/api/paste/abc');
+  assert.equal(second.status, 429);
+  assert.deepEqual(second.body, { error: 'rate limited' });
+  assert.equal(queries.length, 1);
+});
+
+test('read rate limit is per client IP when behind a trusted proxy', async () => {
+  const row = { id: 'abc', content: 'x', created_at: 123 };
+  const { pool } = makePool({ selectRows: [row] });
+  const app = createApp({
+    pool,
+    trustProxy: 1,
+    readRateLimitOptions: { windowMs: 60_000, limit: 1 },
+  });
+  const first = await request(app).get('/api/paste/abc').set('X-Forwarded-For', '1.1.1.1');
+  assert.equal(first.status, 200);
+  const second = await request(app).get('/api/paste/abc').set('X-Forwarded-For', '2.2.2.2');
+  assert.equal(second.status, 200);
+});
+
+test('POST limiter and GET limiter are independent', async () => {
+  const row = { id: 'abc', content: 'x', created_at: 123 };
+  const { pool, queries } = makePool({ selectRows: [row] });
+  const app = createApp({
+    pool,
+    rateLimitOptions: { windowMs: 60_000, limit: 1 },
+    readRateLimitOptions: { windowMs: 60_000, limit: 1 },
+  });
+  const post = await request(app).post('/api/paste').send({ content: 'one' });
+  assert.equal(post.status, 200);
+  const read = await request(app).get('/api/paste/abc');
+  assert.equal(read.status, 200);
+  assert.equal(queries.length, 2);
+});
+
 test('serves SPA from dist dir and passes through /api', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'mdshare-dist-'));
   writeFileSync(path.join(dir, 'index.html'), '<!doctype html><title>mdshare</title>');

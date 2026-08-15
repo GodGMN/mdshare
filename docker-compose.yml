@@ -7,3 +7,26 @@ services:
     ports:
       - '20080:20080'
     restart: unless-stopped
+
+  # Optional local database for a fully self-contained setup:
+  #   docker compose --profile db up --build
+  # with server/.env pointing at:
+  #   DATABASE_URL=postgresql://mdshare:mdshare@db:5432/mdshare
+  db:
+    image: postgres:16-alpine
+    container_name: mdshare-db
+    profiles: ['db']
+    environment:
+      POSTGRES_USER: mdshare
+      POSTGRES_PASSWORD: mdshare
+      POSTGRES_DB: mdshare
+    volumes:
+      - mdshare-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mdshare']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mdshare-db:

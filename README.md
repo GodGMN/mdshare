@@ -27,6 +27,13 @@ MAX_CONTENT=1000000
 
 The `pastes` table is created automatically on startup.
 
+To run a fully self-contained stack with a local PostgreSQL, use the `db` profile:
+
+```sh
+DATABASE_URL=postgresql://mdshare:mdshare@db:5432/mdshare  # in server/.env
+docker compose --profile db up --build
+```
+
 ## Production deployment
 
 The `Dockerfile` is a multi-stage production build — it compiles the React client and serves it from Express with no dev dependencies:
@@ -53,7 +60,7 @@ docker run -p 20080:20080 -e DATABASE_URL=postgresql://... ghcr.io/godgmn/mdshar
 | `PASTE_TTL_DAYS` | No | `30` | Pastes older than this are deleted hourly; `0` disables expiry |
 | `TRUST_PROXY` | No | — | Set when running behind a reverse proxy so per-IP rate limiting works. `true`, or the number of proxy hops (e.g. `1`), or a proxy subnet |
 
-Anonymous pastes are rate limited per IP to **10 posts per minute** (in-memory; resets on restart). Empty or whitespace-only pastes are rejected with a 400. Released images are scanned with Trivy, signed with cosign, and published with an SPDX SBOM.
+Anonymous pastes are rate limited per IP to **10 posts per minute**; reads are limited to **60 per minute** (both in-memory; they reset on restart). Empty or whitespace-only pastes are rejected with a 400. `PORT`, `MAX_CONTENT`, and `PASTE_TTL_DAYS` are validated at startup — the server exits with a clear error if they are not valid integers. Released images are multi-platform (`linux/amd64`, `linux/arm64`), scanned with Trivy, smoke-tested against a real PostgreSQL, signed with cosign, and published with an SPDX SBOM.
 
 ## Reverse proxy note
 

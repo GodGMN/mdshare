@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "node --test",
-    "test:coverage": "c8 --include app.js --include cleanup.js --check-coverage --lines 85 --branches 75 --functions 80 node --test"
+    "test:coverage": "c8 --include app.js --include cleanup.js --include env.js --check-coverage --lines 85 --branches 75 --functions 80 node --test"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

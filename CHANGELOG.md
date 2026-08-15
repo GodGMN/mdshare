@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Read rate limiting: `GET /api/paste/:id` is now limited to 60 requests per minute per IP (configurable via `readRateLimitOptions` when embedding `createApp`), independent of the POST limiter.
+- Startup validation of numeric environment variables (`PORT`, `MAX_CONTENT`, `PASTE_TTL_DAYS`) with clear fail-fast errors (`server/env.js`).
+- Multi-platform release images (`linux/amd64`, `linux/arm64`) via QEMU/buildx.
+- Release smoke test: the image is booted against a real PostgreSQL and exercised (health check, paste round-trip) before it is pushed.
+- Scheduled weekly security scan workflow (`npm audit` + Trivy fs scan + gitleaks) alongside gitleaks secret scanning in CI.
+- Optional local PostgreSQL service in `docker-compose.yml` via the `db` profile (`docker compose --profile db up`).
+
 ## [1.2.0] - 2026-08-14
 
 ### Added
