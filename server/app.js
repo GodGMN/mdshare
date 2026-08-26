@@ -1,7 +1,18 @@
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { v4 as uuidv4 } from 'uuid';
+
+// 64 URL-safe symbols -> 6 bits of entropy per character.
+const ID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
+const ID_LENGTH = 12; // 72 bits: collision-probability ~0 for any realistic paste volume
+
+function shortId() {
+  let id = '';
+  const bytes = randomBytes(ID_LENGTH);
+  for (let i = 0; i < ID_LENGTH; i++) id += ID_ALPHABET[bytes[i] & 63];
+  return id;
+}
 
 export function createApp({
   pool,
@@ -40,7 +51,7 @@ export function createApp({
     if (content.trim().length === 0) return res.status(400).json({ error: 'empty content' });
 
     try {
-      const id = uuidv4();
+      const id = shortId();
       await pool.query('INSERT INTO pastes (id, content, created_at) VALUES ($1, $2, $3)', [
         id,
         content,

@@ -33,7 +33,7 @@ test('POST /api/paste stores content and returns url', async () => {
     .post('/api/paste')
     .send({ content: '# hello' });
   assert.equal(res.status, 200);
-  assert.match(res.body.id, /^[0-9a-f-]{36}$/);
+  assert.match(res.body.id, /^[A-Za-z0-9_-]{12}$/);
   assert.equal(res.body.url, `/${res.body.id}`);
   assert.equal(queries.length, 1);
   assert.equal(queries[0].params[0], res.body.id);
