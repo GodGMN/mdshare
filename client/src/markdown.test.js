@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderMarkdown } from './markdown.js';
+import { renderMarkdown, parseFrontmatter, formatMetaValue } from './markdown.js';
 
 describe('renderMarkdown', () => {
   it('renders headings with slug ids', () => {
@@ -46,5 +46,82 @@ describe('renderMarkdown', () => {
   it('strips dangerous content even if injected through linkify', () => {
     const html = renderMarkdown('visit javascript:alert(1) now');
     expect(html).not.toMatch(/href="javascript:/i);
+  });
+});
+
+describe('parseFrontmatter', () => {
+  const src = `---
+title: "Standalone YouTube Downloader — PRD"
+type: proposal
+status: draft
+owner: product
+updated: 2026-08-27
+---
+
+# PRD — Standalone YouTube Downloader`;
+
+  it('parses scalar front-matter and separates the body', () => {
+    const { meta, body } = parseFrontmatter(src);
+    expect(meta).toEqual({
+      title: 'Standalone YouTube Downloader — PRD',
+      type: 'proposal',
+      status: 'draft',
+      owner: 'product',
+      updated: '2026-08-27',
+    });
+    expect(body).toContain('# PRD — Standalone YouTube Downloader');
+    expect(body).not.toContain('---');
+    expect(body).not.toContain('proposal');
+  });
+
+  it('coerces booleans, numbers and null', () => {
+    const { meta } = parseFrontmatter('---\nok: true\nno: false\ncount: 42\nnil:\n---');
+    expect(meta).toEqual({ ok: true, no: false, count: 42, nil: null });
+  });
+
+  it('drops inline comments and honours quoting', () => {
+    const { meta } = parseFrontmatter(
+      "---\nnote: 'has # not a comment'\nstatus: live # trailing\n---",
+    );
+    expect(meta).toEqual({ note: 'has # not a comment', status: 'live' });
+  });
+
+  it('returns null meta when there is no front-matter', () => {
+    const { meta, body } = parseFrontmatter('# Just a heading');
+    expect(meta).toBeNull();
+    expect(body).toBe('# Just a heading');
+  });
+
+  it('treats an unclosed front-matter as body', () => {
+    const { meta, body } = parseFrontmatter('---\ntitle: x\n# never closes');
+    expect(meta).toBeNull();
+    expect(body).toBe('---\ntitle: x\n# never closes');
+  });
+
+  it('handles non-string input', () => {
+    expect(parseFrontmatter(null)).toEqual({ meta: null, body: '' });
+  });
+});
+
+describe('renderMarkdown with front-matter', () => {
+  it('hides the front-matter block from the rendered output', () => {
+    const html = renderMarkdown(`---
+title: "A"
+status: draft
+---
+# Hello
+`);
+    expect(html).toContain('<h1');
+    expect(html).not.toContain('draft');
+    expect(html).not.toMatch(/<hr/);
+  });
+});
+
+describe('formatMetaValue', () => {
+  it('formats values for display', () => {
+    expect(formatMetaValue('x')).toBe('x');
+    expect(formatMetaValue(false)).toBe('false');
+    expect(formatMetaValue(null)).toBe('');
+    expect(formatMetaValue({ a: 1 })).toBe('{"a":1}');
   });
 });

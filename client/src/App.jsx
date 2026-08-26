@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { renderMarkdown } from './markdown.js';
+import { renderMarkdown, parseFrontmatter, formatMetaValue } from './markdown.js';
 
 const idFromPath = () => {
   const seg = window.location.pathname.split('/').filter(Boolean);
@@ -101,6 +101,11 @@ export default function App() {
   }, [id]);
 
   useEffect(() => {
+    const { meta } = parseFrontmatter(content);
+    document.title = meta?.title ? `${formatMetaValue(meta.title)} · mdshare` : 'mdshare';
+  }, [content]);
+
+  useEffect(() => {
     if (taRef.current) {
       taRef.current.style.height = 'auto';
       taRef.current.style.height = taRef.current.scrollHeight + 'px';
@@ -108,6 +113,7 @@ export default function App() {
   }, [content]);
 
   const rendered = renderMarkdown(content);
+  const { meta } = parseFrontmatter(content);
 
   const newNote = () => {
     setContent('');
@@ -166,6 +172,19 @@ export default function App() {
 
       {id ? (
         <main className="viewer">
+          {meta && (
+            <aside className="meta" aria-label="Document metadata">
+              {Object.entries(meta).map(([key, value]) => (
+                <span className="meta-item" key={key} data-meta-key={key}>
+                  <span className="meta-key">{key}</span>
+                  <span className="meta-sep">::</span>
+                  <span className="meta-val">
+                    {value === null ? <em className="meta-empty">n/a</em> : formatMetaValue(value)}
+                  </span>
+                </span>
+              ))}
+            </aside>
+          )}
           <div className="markdown" dangerouslySetInnerHTML={{ __html: rendered }} />
         </main>
       ) : (

@@ -87,3 +87,45 @@ test('save failure shows an error and keeps the editor', async () => {
   await waitFor(() => expect(screen.getByText(/ERR: rate limited/)).toBeTruthy());
   expect(screen.getByPlaceholderText(/Paste your Markdown/i)).toBeTruthy();
 });
+
+test('front-matter metadata is represented as a metadata panel', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url) => {
+      if (url === '/api/paste')
+        return { ok: true, json: async () => ({ id: 'meta-1', url: '/meta-1' }) };
+      if (url === '/api/paste/meta-1')
+        return {
+          ok: true,
+          json: async () => ({
+            id: 'meta-1',
+            content: `---
+title: "PRD — Example"
+type: proposal
+status: draft
+owner: product
+updated: 2026-08-27
+---
+
+# Body`,
+            created_at: 1,
+          }),
+        };
+      throw new Error(`unexpected fetch: ${url}`);
+    }),
+  );
+  window.history.replaceState({}, '', '/meta-1');
+
+  render(<App />);
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Body' })).toBeTruthy());
+
+  const meta = screen.getByLabelText('Document metadata');
+  expect(meta).toBeTruthy();
+  expect(meta.textContent).toContain('title');
+  expect(meta.textContent).toContain('PRD — Example');
+  expect(meta.textContent).toContain('status');
+  expect(meta.textContent).toContain('draft');
+  // front-matter block must not bleed into the rendered markdown
+  expect(screen.getByRole('heading', { name: 'Body' }).parentElement.textContent).toContain('Body');
+  expect(document.title).toContain('PRD — Example');
+});

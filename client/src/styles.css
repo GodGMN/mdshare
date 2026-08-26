@@ -226,6 +226,46 @@ a:hover {
   margin-top: 0;
 }
 
+/* ——— Front-matter metadata panel ——— */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 28px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+}
+.meta-key {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.meta-sep {
+  color: var(--accent);
+  opacity: 0.7;
+}
+.meta-val {
+  color: var(--accent-bright);
+}
+.meta-empty {
+  color: var(--text-dim);
+  font-style: normal;
+}
+
 /* Paragraphs */
 .markdown p {
   margin: 0 0 1.1em;
