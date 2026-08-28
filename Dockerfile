@@ -1,5 +1,5 @@
 # ---- Build stage: compile the React client ----
-FROM node:20-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app/client
 COPY client/package.json client/package-lock.json* ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY client/ .
 RUN npm run build
 
 # ---- Runtime stage: Express server ----
-FROM node:20-slim
+FROM node:26-slim
 WORKDIR /app
 
 # Pick up Debian security fixes newer than the base image
