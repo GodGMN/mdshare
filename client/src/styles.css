@@ -167,6 +167,14 @@ a:hover {
   font-size: 14px;
 }
 
+.notice {
+  background: #1a1505;
+  border-bottom: 1px solid #6b5a2a;
+  color: #ffd98a;
+  padding: 10px 28px;
+  font-size: 14px;
+}
+
 /* ——— Editor ——— */
 .editor {
   flex: 1;

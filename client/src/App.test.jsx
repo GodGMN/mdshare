@@ -88,6 +88,41 @@ test('save failure shows an error and keeps the editor', async () => {
   expect(screen.getByPlaceholderText(/Paste your Markdown/i)).toBeTruthy();
 });
 
+test('clipboard failure during save is non-fatal and keeps the copy affordance', async () => {
+  const writeText = vi.fn().mockRejectedValue(new Error('clipboard denied'));
+  vi.stubGlobal('navigator', { clipboard: { writeText } });
+  vi.stubGlobal('isSecureContext', true);
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url, opts) => {
+      if (url === '/api/paste' && opts?.method === 'POST')
+        return { ok: true, json: async () => ({ id: 'no-clip', url: '/no-clip' }) };
+      if (url === '/api/paste/no-clip')
+        return {
+          ok: true,
+          json: async () => ({ id: 'no-clip', content: '# Saved', created_at: 1 }),
+        };
+      throw new Error(`unexpected fetch: ${url}`);
+    }),
+  );
+
+  render(<App />);
+  fireEvent.change(screen.getByPlaceholderText(/Paste your Markdown/i), {
+    target: { value: '# Saved' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /SAVE/ }));
+
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Saved' })).toBeTruthy());
+  expect(writeText).toHaveBeenCalled();
+  expect(window.location.pathname).toBe('/no-clip');
+  // The clipboard failure must not be reported as a save failure.
+  expect(screen.queryByText(/ERR:/)).toBeNull();
+  // The user still gets a usable copy affordance plus a non-fatal notice.
+  expect(screen.getByRole('button', { name: /COPY URL/ })).toBeTruthy();
+  expect(screen.getByText(/clipboard access was blocked/i)).toBeTruthy();
+});
+
 test('front-matter metadata is represented as a metadata panel', async () => {
   vi.stubGlobal(
     'fetch',
