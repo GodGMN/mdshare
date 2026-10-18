@@ -1,5 +1,5 @@
 import { test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import App from './App.jsx';
 
 beforeEach(() => {
@@ -163,4 +163,37 @@ updated: 2026-08-27
   // front-matter block must not bleed into the rendered markdown
   expect(screen.getByRole('heading', { name: 'Body' }).parentElement.textContent).toContain('Body');
   expect(document.title).toContain('PRD — Example');
+});
+
+test('popstate syncs the viewer and editor with the URL', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url) => {
+      if (url === '/api/paste/pop-1')
+        return {
+          ok: true,
+          json: async () => ({ id: 'pop-1', content: '# First', created_at: 1 }),
+        };
+      if (url === '/api/paste/pop-2')
+        return {
+          ok: true,
+          json: async () => ({ id: 'pop-2', content: '# Second', created_at: 1 }),
+        };
+      throw new Error(`unexpected fetch: ${url}`);
+    }),
+  );
+  window.history.replaceState({}, '', '/pop-1');
+
+  render(<App />);
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'First' })).toBeTruthy());
+
+  window.history.replaceState({}, '', '/pop-2');
+  act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Second' })).toBeTruthy());
+  expect(window.location.pathname).toBe('/pop-2');
+
+  window.history.replaceState({}, '', '/');
+  act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+  await waitFor(() => expect(screen.getByPlaceholderText(/Paste your Markdown/i)).toBeTruthy());
+  expect(window.location.pathname).toBe('/');
 });

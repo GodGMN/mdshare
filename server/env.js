@@ -25,7 +25,11 @@ export function parseNonNegativeInt(env, name, fallback) {
 
 export function parseTrustProxy(value) {
   if (!value) return false;
-  if (value === 'true') return true;
+  if (value === 'true') {
+    throw new Error(
+      'TRUST_PROXY=true trusts every forwarded address; use the number of proxy hops (e.g. TRUST_PROXY=1) or a trusted subnet (e.g. TRUST_PROXY=10.0.0.0/8)',
+    );
+  }
   const hops = Number(value);
   return Number.isInteger(hops) && hops >= 0 ? hops : value;
 }

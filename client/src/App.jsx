@@ -95,6 +95,20 @@ export default function App() {
   }, [save]);
 
   useEffect(() => {
+    const onPopState = () => {
+      const nextId = idFromPath();
+      setId(nextId);
+      setError(null);
+      if (!nextId) {
+        setContent('');
+        setCopiedAction(null);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
     if (!id) return;
     let cancelled = false;
     (async () => {

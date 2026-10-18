@@ -67,11 +67,18 @@ test('empty values fall back to defaults', () => {
   assert.equal(parseNonNegativeInt({ PASTE_TTL_DAYS: '' }, 'PASTE_TTL_DAYS', 30), 30);
 });
 
-test('parseTrustProxy handles true, hop counts, subnets and falsy values', () => {
+test('parseTrustProxy rejects true and keeps hop counts and subnets', () => {
   assert.equal(parseTrustProxy(undefined), false);
   assert.equal(parseTrustProxy(''), false);
-  assert.equal(parseTrustProxy('true'), true);
+  assert.throws(() => parseTrustProxy('true'), /TRUST_PROXY=true.*proxy hops.*subnet/);
   assert.equal(parseTrustProxy('2'), 2);
   assert.equal(parseTrustProxy('10.0.0.0/8'), '10.0.0.0/8');
   assert.equal(parseTrustProxy('bogus'), 'bogus');
+});
+
+test('loadConfig rejects TRUST_PROXY=true with a hint', () => {
+  assert.throws(
+    () => loadConfig({ ...BASE_ENV, TRUST_PROXY: 'true' }),
+    /TRUST_PROXY=true.*TRUST_PROXY=1.*subnet/,
+  );
 });
