@@ -30,21 +30,40 @@ export default function App() {
   const [id, setId] = useState(initialId.current);
   const [content, setContent] = useState('');
   const [error, setError] = useState(null);
+  const [copyNotice, setCopyNotice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copiedAction, setCopiedAction] = useState(null);
   const copiedTimer = useRef(null);
   const taRef = useRef(null);
 
   const flashCopied = useCallback((action) => {
+    setCopyNotice(null);
     setCopiedAction(action);
     clearTimeout(copiedTimer.current);
     copiedTimer.current = setTimeout(() => setCopiedAction(null), 1600);
   }, []);
 
+  // Copying is a separate, non-fatal effect from saving/loading. A blocked
+  // clipboard must never surface as a save error: keep the copy buttons
+  // available and report the failure with a dedicated notice instead.
+  const copyToClipboard = useCallback(
+    async (text, action) => {
+      try {
+        await copyText(text);
+        flashCopied(action);
+      } catch {
+        setCopyNotice('Clipboard access was blocked — nothing was copied.');
+      }
+    },
+    [flashCopied],
+  );
+
   const save = useCallback(async () => {
     if (!content) return;
     setError(null);
+    setCopyNotice(null);
     setLoading(true);
+    let shareUrl;
     try {
       const res = await fetch('/api/paste', {
         method: 'POST',
@@ -55,14 +74,14 @@ export default function App() {
       if (!res.ok) throw new Error(data.error || 'save failed');
       setId(data.id);
       window.history.replaceState({}, '', data.url);
-      await copyText(`${window.location.origin}${data.url}`);
-      flashCopied('url');
+      shareUrl = `${window.location.origin}${data.url}`;
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [content, flashCopied]);
+    if (shareUrl) await copyToClipboard(shareUrl, 'url');
+  }, [content, copyToClipboard]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -119,19 +138,18 @@ export default function App() {
     setContent('');
     setId(null);
     setError(null);
+    setCopyNotice(null);
     setCopiedAction(null);
     window.history.replaceState({}, '', '/');
   };
 
   const copy = async () => {
     if (!id) return;
-    await copyText(`${window.location.origin}/${id}`);
-    flashCopied('url');
+    await copyToClipboard(`${window.location.origin}/${id}`, 'url');
   };
 
   const copyMarkdown = async () => {
-    await copyText(content);
-    flashCopied('md');
+    await copyToClipboard(content, 'md');
   };
 
   return (
@@ -169,6 +187,7 @@ export default function App() {
       </header>
 
       {error && <div className="error">ERR: {error}</div>}
+      {copyNotice && <div className="notice">{copyNotice}</div>}
 
       {id ? (
         <main className="viewer">
