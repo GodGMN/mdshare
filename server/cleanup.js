@@ -3,12 +3,17 @@ export function deleteExpiredPastes(pool, ttlMs, now = Date.now()) {
 }
 
 export function startCleanupInterval(pool, ttlMs, intervalMs = 60 * 60 * 1000) {
+  let running = false;
   const run = async () => {
+    if (running) return;
+    running = true;
     try {
       const result = await deleteExpiredPastes(pool, ttlMs);
       if (result.rowCount > 0) console.log(`mdshare: deleted ${result.rowCount} expired paste(s)`);
     } catch (err) {
       console.error('mdshare: paste cleanup failed:', err.message);
+    } finally {
+      running = false;
     }
   };
   run();
