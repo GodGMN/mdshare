@@ -2,9 +2,9 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
-import pg from 'pg';
 import { createApp } from './app.js';
 import { startCleanupInterval } from './cleanup.js';
+import { createPool } from './pool.js';
 import { SCHEMA_SQL } from './schema.js';
 import { loadConfig } from './env.js';
 
@@ -28,7 +28,7 @@ const {
 
 const DIST_DIR = path.join(__dirname, '..', 'client', 'dist');
 
-const pool = new pg.Pool({ connectionString: DATABASE_URL });
+const pool = createPool(DATABASE_URL);
 
 try {
   await pool.query(SCHEMA_SQL);
