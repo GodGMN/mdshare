@@ -58,13 +58,13 @@ docker run -p 20080:20080 -e DATABASE_URL=postgresql://... ghcr.io/godgmn/mdshar
 | `HOST` | No | `0.0.0.0` | Bind address |
 | `MAX_CONTENT` | No | `1000000` | Max paste size (bytes) |
 | `PASTE_TTL_DAYS` | No | `30` | Pastes older than this are deleted hourly; `0` disables expiry |
-| `TRUST_PROXY` | No | — | Set when running behind a reverse proxy so per-IP rate limiting works. `true`, or the number of proxy hops (e.g. `1`), or a proxy subnet |
+| `TRUST_PROXY` | No | — | Set when running behind a reverse proxy so per-IP rate limiting works. Use the number of proxy hops (e.g. `1`) or a proxy subnet; `true` is rejected |
 
-Anonymous pastes are rate limited per IP to **10 posts per minute**; reads are limited to **60 per minute** (both in-memory; they reset on restart). Empty or whitespace-only pastes are rejected with a 400. `PORT`, `MAX_CONTENT`, and `PASTE_TTL_DAYS` are validated at startup — the server exits with a clear error if they are not valid integers. Released images are multi-platform (`linux/amd64`, `linux/arm64`), scanned with Trivy, smoke-tested against a real PostgreSQL, signed with cosign, and published with an SPDX SBOM.
+Anonymous pastes are rate limited per IP to **10 posts per minute**; reads are limited to **60 per minute** (both in-memory; they reset on restart). Empty or whitespace-only pastes are rejected with a 400. `PORT`, `MAX_CONTENT`, `PASTE_TTL_DAYS`, and `TRUST_PROXY` are validated at startup — the server exits with a clear error if they are not valid. Released images are multi-platform (`linux/amd64`, `linux/arm64`), scanned with Trivy, smoke-tested against a real PostgreSQL, signed with cosign, and published with an SPDX SBOM.
 
 ## Reverse proxy note
 
-If mdshare runs behind nginx/Traefik/Caddy, set `TRUST_PROXY=1` (or your proxy count). Without it, the rate limiter sees the proxy's IP for every client and throttles all users together.
+If mdshare runs behind nginx/Traefik/Caddy, set `TRUST_PROXY=1` (or your proxy count) or a trusted subnet. Without it, the rate limiter sees the proxy's IP for every client and throttles all users together. `TRUST_PROXY=true` is rejected because it trusts every address in the `X-Forwarded-For` chain, letting clients spoof their IP and evade the rate limits.
 
 ## Development
 

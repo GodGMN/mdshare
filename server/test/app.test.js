@@ -6,14 +6,24 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createApp } from '../app.js';
 
-function makePool({ selectRows = [], selectError = null, insertError = null } = {}) {
+function makePool({
+  selectRows = [],
+  selectError = null,
+  insertError = null,
+  insertErrors = null,
+} = {}) {
   const queries = [];
+  let insertCount = 0;
   const pool = {
     query: async (text, params) => {
       queries.push({ text, params });
-      if (text.trimStart().startsWith('SELECT') && selectError) throw selectError;
-      if (text.trimStart().startsWith('INSERT') && insertError) throw insertError;
-      if (text.trimStart().startsWith('SELECT')) return { rows: selectRows };
+      const statement = text.trimStart();
+      if (statement.startsWith('SELECT') && selectError) throw selectError;
+      if (statement.startsWith('INSERT')) {
+        const error = insertErrors ? insertErrors[insertCount++] : insertError;
+        if (error) throw error;
+      }
+      if (statement.startsWith('SELECT')) return { rows: selectRows };
       return { rows: [] };
     },
   };
@@ -96,6 +106,30 @@ test('POST /api/paste returns 500 when insert fails', async () => {
     .send({ content: 'hi' });
   assert.equal(res.status, 500);
   assert.deepEqual(res.body, { error: 'internal error' });
+});
+
+test('POST /api/paste retries with a fresh id on unique violation', async () => {
+  const conflict = Object.assign(new Error('duplicate key'), { code: '23505' });
+  const { pool, queries } = makePool({ insertErrors: [conflict] });
+  const res = await request(createApp({ pool, enableRateLimit: false }))
+    .post('/api/paste')
+    .send({ content: 'hi' });
+  assert.equal(res.status, 200);
+  assert.match(res.body.id, /^[A-Za-z0-9_-]{12}$/);
+  assert.equal(res.body.url, `/${res.body.id}`);
+  assert.equal(queries.length, 2);
+  assert.notEqual(queries[0].params[0], queries[1].params[0]);
+});
+
+test('POST /api/paste returns 500 when id collisions persist', async () => {
+  const conflict = Object.assign(new Error('duplicate key'), { code: '23505' });
+  const { pool, queries } = makePool({ insertErrors: [conflict, conflict, conflict] });
+  const res = await request(createApp({ pool, enableRateLimit: false }))
+    .post('/api/paste')
+    .send({ content: 'hi' });
+  assert.equal(res.status, 500);
+  assert.deepEqual(res.body, { error: 'internal error' });
+  assert.equal(queries.length, 3);
 });
 
 test('POST /api/paste with malformed JSON returns 400', async () => {

@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 // 64 URL-safe symbols -> 6 bits of entropy per character.
 const ID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
 const ID_LENGTH = 12; // 72 bits: collision-probability ~0 for any realistic paste volume
+const ID_ATTEMPTS = 3;
 
 function shortId() {
   let id = '';
@@ -50,17 +51,21 @@ export function createApp({
     if (content === null) return res.status(400).json({ error: 'missing content' });
     if (content.trim().length === 0) return res.status(400).json({ error: 'empty content' });
 
-    try {
+    for (let attempt = 0; attempt < ID_ATTEMPTS; attempt++) {
       const id = shortId();
-      await pool.query('INSERT INTO pastes (id, content, created_at) VALUES ($1, $2, $3)', [
-        id,
-        content,
-        Date.now(),
-      ]);
-      res.json({ id, url: `/${id}` });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'internal error' });
+      try {
+        await pool.query('INSERT INTO pastes (id, content, created_at) VALUES ($1, $2, $3)', [
+          id,
+          content,
+          Date.now(),
+        ]);
+        return res.json({ id, url: `/${id}` });
+      } catch (err) {
+        // A collision on the primary key is worth retrying with a fresh ID.
+        if (err?.code === '23505' && attempt < ID_ATTEMPTS - 1) continue;
+        console.error(err);
+        return res.status(500).json({ error: 'internal error' });
+      }
     }
   };
 
