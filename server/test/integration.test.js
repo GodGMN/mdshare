@@ -24,6 +24,12 @@ describe('integration (real PostgreSQL)', options, () => {
     if (pool) await pool.end();
   });
 
+  test('health check verifies the real database connection', async () => {
+    const res = await request(app).get('/health');
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, { ok: true });
+  });
+
   test('paste is stored and retrieved via real Postgres', async () => {
     const post = await request(app).post('/api/paste').send({ content: '# real db' });
     assert.equal(post.status, 200);

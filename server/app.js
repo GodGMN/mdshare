@@ -87,7 +87,15 @@ export function createApp({
     app.post('/api/paste', createPaste);
   }
 
-  app.get('/health', (_req, res) => res.json({ ok: true }));
+  app.get('/health', async (_req, res) => {
+    try {
+      await pool.query('SELECT 1');
+      res.json({ ok: true });
+    } catch (err) {
+      console.error(err);
+      res.status(503).json({ ok: false });
+    }
+  });
 
   const readPaste = async (req, res) => {
     try {

@@ -20,11 +20,21 @@ function makePool({ selectRows = [], selectError = null, insertError = null } = 
   return { pool, queries };
 }
 
-test('GET /health returns ok', async () => {
-  const { pool } = makePool();
+test('GET /health returns ok after a successful liveness query', async () => {
+  const { pool, queries } = makePool();
   const res = await request(createApp({ pool, enableRateLimit: false })).get('/health');
   assert.equal(res.status, 200);
   assert.deepEqual(res.body, { ok: true });
+  assert.equal(queries.length, 1);
+  assert.match(queries[0].text, /^\s*SELECT 1\s*$/);
+});
+
+test('GET /health returns 503 when the liveness query fails', async () => {
+  const { pool } = makePool({ selectError: new Error('connection refused') });
+  const res = await request(createApp({ pool, enableRateLimit: false })).get('/health');
+  assert.equal(res.status, 503);
+  assert.deepEqual(res.body, { ok: false });
+  assert.doesNotMatch(JSON.stringify(res.body), /connection refused/);
 });
 
 test('POST /api/paste stores content and returns url', async () => {
