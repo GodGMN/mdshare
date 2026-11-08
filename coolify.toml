@@ -1,0 +1,7 @@
+project = "mdshare"
+domain = "md.gimeno.dev"
+
+[apps.mdshare]
+dockerfile = "Dockerfile"
+port = 20080
+watch = [".dockerignore", "Dockerfile", "client/**", "server/**"]
