@@ -11,7 +11,7 @@ const md = new MarkdownIt({
   html: false,
   linkify: true,
   typographer: true,
-  breaks: true,
+  breaks: false,
 });
 
 const slugify = (s) =>
