@@ -20,6 +20,17 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('text[^1]\n\n[^1]: note')).toContain('footnote');
   });
 
+  it('joins hard-wrapped lines into one paragraph (CommonMark soft breaks)', () => {
+    const html = renderMarkdown('first line\nsecond line');
+    expect(html).not.toContain('<br>');
+    expect(html).toContain('<p>first line\nsecond line</p>');
+  });
+
+  it('keeps explicit hard breaks', () => {
+    expect(renderMarkdown('a  \nb')).toContain('<br>');
+    expect(renderMarkdown('a\\\nb')).toContain('<br>');
+  });
+
   it('renders empty input as empty output', () => {
     expect(renderMarkdown('')).toBe('');
     expect(renderMarkdown(null)).toBe('');
